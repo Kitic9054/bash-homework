@@ -27,4 +27,4 @@ chmod +x *
 ./addline ./example
 ```
 
-Для `mkarch`, `chsuf`, `stsuf`, `addline` и `massexec.sh` используйте тестовые каталоги и копии файлов. Некоторые скрипты изменяют файлы.
+

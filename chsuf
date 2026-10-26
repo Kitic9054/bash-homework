@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Задача 7. Рекурсивная замена суффикса.
+set -u
+usage() { echo "Использование: $0 каталог старый_суффикс новый_суффикс" >&2; exit 2; }
+(($# == 3)) || usage
+dir=$1; old=$2; new=$3
+[[ -d $dir ]] || { echo "Ошибка: это не каталог: $dir" >&2; exit 2; }
+valid_suffix() { [[ $1 == .* && ${#1} -ge 2 && $1 != *.*.* ]]; }
+valid_suffix "$old" && valid_suffix "$new" || {
+    echo "Ошибка: суффикс должен начинаться с точки, иметь хотя бы ещё один символ и не содержать других точек." >&2
+    exit 2
+}
+while IFS= read -r -d '' file; do
+    name=${file##*/}
+    # Dotfile вида .txt суффиксом не обладает; ..txt имеет суффикс .txt.
+    [[ $name == "$old" ]] && continue
+    [[ $name == *"$old" ]] || continue
+    new_name=${name%"$old"}$new
+    [[ $new_name == "$name" ]] && continue
+    target=${file%/*}/$new_name
+    if [[ -e $target ]]; then
+        echo "Пропуск: целевой файл уже существует: $target" >&2
+        continue
+    fi
+    mv -- "$file" "$target" || exit 1
+done < <(find "$dir" -type f -print0)

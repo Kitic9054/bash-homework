@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Задача 3. Пятнашки. Перемешивание выполняется допустимыми ходами,
+# поэтому начальная конфигурация всегда решаема.
+set -u
+declare -a board
+for ((i=0; i<15; i++)); do board[i]=$((i+1)); done
+board[15]=0
+blank=15
+
+# Перемешать серией случайных легальных ходов от решённого состояния.
+for ((i=0; i<300; i++)); do
+    candidates=()
+    row=$((blank / 4)); col=$((blank % 4))
+    ((row > 0)) && candidates+=("$((blank-4))")
+    ((row < 3)) && candidates+=("$((blank+4))")
+    ((col > 0)) && candidates+=("$((blank-1))")
+    ((col < 3)) && candidates+=("$((blank+1))")
+    next=${candidates[RANDOM % ${#candidates[@]}]}
+    board[blank]=${board[next]}
+    board[next]=0
+    blank=$next
+done
+
+moves=0
+show_board() {
+    echo "+-------------------+"
+    for ((r=0; r<4; r++)); do
+        printf '|'
+        for ((c=0; c<4; c++)); do
+            value=${board[r*4+c]}
+            if ((value == 0)); then printf '    |'; else printf ' %2d |' "$value"; fi
+        done
+        printf '\n'
+        if ((r < 3)); then echo "|-------------------|"; fi
+    done
+    echo "+-------------------+"
+}
+is_solved() {
+    for ((i=0; i<15; i++)); do
+        ((board[i] == i+1)) || return 1
+    done
+    ((board[15] == 0))
+}
+while :; do
+    printf '\nХод № %d\n' "$((moves+1))"
+    show_board
+    read -r -p 'Ваш ход (q - выход): ' input
+    [[ $input == q || $input == Q ]] && exit 0
+    if [[ ! $input =~ ^[0-9]+$ ]] || ((input < 1 || input > 15)); then
+        echo "Введите число от 1 до 15 или q."
+        continue
+    fi
+    found=-1
+    for ((i=0; i<16; i++)); do
+        if ((board[i] == input)); then found=$i; break; fi
+    done
+    if ((found < 0)) || ! { ((found == blank-4 || found == blank+4)) ||
+        ((found/4 == blank/4 && (found == blank-1 || found == blank+1))); }; then
+        echo "Неверный ход! Можно передвинуть только соседнюю с пустой ячейку костяшку."
+        continue
+    fi
+    board[blank]=${board[found]}
+    board[found]=0
+    blank=$found
+    ((moves += 1))
+    if is_solved; then
+        printf 'Вы собрали головоломку за %d ходов.\n' "$moves"
+        show_board
+        exit 0
+    fi
+done

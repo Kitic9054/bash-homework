@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+out="."
+if [[ ${1-} == "-o" ]]; then
+    [[ $# == 2 ]] || { echo "Использование: $0 [-o unpackdir]" >&2; exit 2; }
+    out=$2
+elif (($# != 0)); then
+    echo "Использование: $0 [-o unpackdir]" >&2
+    exit 2
+fi
+mkdir -p "$out"
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+sed '1,/^__ARCHIVE_BELOW__$/d' "$0" | base64 -d > "$tmp"
+tar -xzf "$tmp" -C "$out"
+exit 0
+__ARCHIVE_BELOW__
+H4sIAAAAAAAAA+3X7QqCMBQG4P3uKryCfejOzvUsEAvURS6qu09/FGH0gTAlfJ8/g22wA4fXOalE
+crrHRMNomPTzeCcM5Y5dzmz7fUYTa5FR+tKEOHXRH7NMRF/vr/79vm/rf0qq0JYyXmLCM4YGO2s/
+9N+N+p+bfirTCWt6WHn/fX3Y+c3SVcBSpIrnsHj+6SX/BSH/c9iWEfFfManaEMtO1qFKdsaE+98a
+Rv7nUPmmwQdgvaRKfPmLX/I/fv+ZgvH/DwAAAAAAAAAAAAAAMMkNQLuVpwAoAAA=

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Задача 8. Статистика суффиксов (Bash 5.2+).
+set -u
+(($# == 1)) || { echo "Использование: $0 каталог" >&2; exit 2; }
+dir=$1
+[[ -d $dir ]] || { echo "Ошибка: это не каталог: $dir" >&2; exit 2; }
+
+declare -A counts=()
+while IFS= read -r -d '' file; do
+    name=${file##*/}
+    suffix="no suffix"
+    # Начальная точка сама по себе не делает .txt суффиксом.
+    if [[ $name == *.* ]]; then
+        last=${name##*.}
+        prefix=${name%.*}
+        if [[ -n $prefix ]]; then
+            suffix=".$last"
+        elif [[ $name == .*.* ]]; then
+            suffix=".${name##*.}"
+        fi
+    fi
+    ((counts["$suffix"] += 1))
+done < <(find "$dir" -type f -print0)
+
+for suffix in "${!counts[@]}"; do
+    printf '%s\t%s\n' "${counts[$suffix]}" "$suffix"
+done | sort -rn -k1,1 | awk -F '\t' '{printf "%s: %s\n", $2, $1}'

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Задача 9. Добавить Approved-строку в начало каждого регулярного *.txt
+# непосредственно в каталоге, без рекурсии.
+set -u
+(($# == 1)) || { echo "Использование: $0 каталог" >&2; exit 2; }
+dir=$1
+[[ -d $dir ]] || { echo "Ошибка: это не каталог: $dir" >&2; exit 2; }
+dir=$(cd -- "$dir" && pwd -P)
+user_name=${USER:-$(id -un)}
+date_iso=$(date -I)
+shopt -s nullglob dotglob
+for file in "$dir"/*.txt; do
+    [[ -f $file && ! -L $file ]] || continue
+    tmp=$(mktemp "$dir/.addline.XXXXXX") || exit 1
+    if ! { printf 'Approved %s %s\n' "$user_name" "$date_iso"; cat -- "$file"; } > "$tmp"; then
+        rm -f -- "$tmp"
+        exit 1
+    fi
+    chmod --reference="$file" "$tmp" 2>/dev/null || true
+    mv -- "$tmp" "$file" || { rm -f -- "$tmp"; exit 1; }
+    echo "Обработан файл: $file"
+done

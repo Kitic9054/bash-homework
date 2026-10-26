@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Задача 4. Ханойская башня (8 дисков)
+set -u
+A=(8 7 6 5 4 3 2 1)
+B=()
+C=()
+turn=1
+
+on_int() {
+    echo
+    echo "Для выхода введите q или Q. Игра продолжается."
+}
+trap on_int INT
+
+show_stacks() {
+    local i
+    for ((i=7; i>=0; i--)); do
+        for stack in A B C; do
+            eval 'size=${#'"$stack"'[@]}'
+            if ((size > i)); then
+                eval 'value=${'"$stack"'[i]}'
+                printf '|%s|' "$value"
+            else
+                printf '| |'
+            fi
+            printf '   '
+        done
+        printf '\n'
+    done
+    echo '+-+   +-+   +-+'
+    echo ' A     B     C'
+}
+while :; do
+    show_stacks
+    read -r -p "Ход № $turn (откуда, куда): " line
+    [[ $line == q || $line == Q ]] && exit 1
+    # Принимаем AB, "A B", "a c" и пробелы между буквами.
+    compact=${line//[[:space:]]/}
+    compact=${compact^^}
+    if [[ ! $compact =~ ^[ABC]{2}$ ]] || [[ ${compact:0:1} == "${compact:1:1}" ]]; then
+        echo "Ошибка: укажите два разных стека A, B или C, например AB или A B."
+        continue
+    fi
+    from=${compact:0:1}; to=${compact:1:1}
+    eval 'from_size=${#'"$from"'[@]}'
+    eval 'to_size=${#'"$to"'[@]}'
+    if ((from_size == 0)); then
+        echo "Стек-отправитель пуст."
+        continue
+    fi
+    eval 'disk=${'"$from"'[from_size-1]}'
+    if ((to_size > 0)); then
+        eval 'top=${'"$to"'[to_size-1]}'
+        if ((disk > top)); then
+            echo "Такое перемещение запрещено!"
+            continue
+        fi
+    fi
+    eval 'unset '"$from"'[from_size-1]'
+    eval "$to+=(\"\$disk\")"
+    ((turn += 1))
+
+    for stack in B C; do
+        eval 'size=${#'"$stack"'[@]}'
+        if ((size == 8)); then
+            eval 'won=1'
+            for ((i=0; i<8; i++)); do
+                eval 'value=${'"$stack"'[i]}'
+                ((value == 8-i)) || won=0
+            done
+            if ((won)); then
+                show_stacks
+                echo "Победа! Все диски перенесены в стек $stack."
+                exit 0
+            fi
+        fi
+    done
+done

@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Задача 2. Быки и коровы (Bash 5.2+)
+set -u
+secret=""
+while ((${#secret} < 4)); do
+    digit=$((RANDOM % 10))
+    [[ $secret == *"$digit"* ]] || secret+=$digit
+done
+
+declare -a guesses=()
+declare -a cows_history=()
+declare -a bulls_history=()
+
+on_int() {
+    echo
+    echo "Для выхода введите q или Q. Игра продолжается."
+}
+trap on_int INT
+
+cat <<'BANNER'
+********************************************************************************
+* Я загадал 4-значное число с неповторяющимися цифрами. На каждом ходу делайте *
+* попытку отгадать число. Попытка — это 4-значное число с неповторяющимися     *
+* цифрами.                                                                     *
+********************************************************************************
+BANNER
+
+turn=1
+while :; do
+    read -r -p "Попытка ${turn}: " guess
+    if [[ $guess == q || $guess == Q ]]; then
+        exit 1
+    fi
+    if [[ ! $guess =~ ^[0-9]{4}$ ]]; then
+        echo "Ошибка: требуется ровно 4 цифры без повторений."
+        continue
+    fi
+    if [[ ${guess:0:1} == "${guess:1:1}" || ${guess:0:1} == "${guess:2:1}" ||
+          ${guess:0:1} == "${guess:3:1}" || ${guess:1:1} == "${guess:2:1}" ||
+          ${guess:1:1} == "${guess:3:1}" || ${guess:2:1} == "${guess:3:1}" ]]; then
+        echo "Ошибка: цифры должны быть неповторяющимися."
+        continue
+    fi
+
+    bulls=0
+    cows=0
+    for ((i=0; i<4; i++)); do
+        digit=${guess:i:1}
+        if [[ ${secret:i:1} == "$digit" ]]; then
+            ((bulls += 1))
+        elif [[ $secret == *"$digit"* ]]; then
+            ((cows += 1))
+        fi
+    done
+
+    guesses+=("$guess")
+    cows_history+=("$cows")
+    bulls_history+=("$bulls")
+    echo "Коров - $cows Быков - $bulls"
+    echo
+    echo "История ходов:"
+    for ((i=0; i<${#guesses[@]}; i++)); do
+        printf '%d. %s (Коров - %s Быков - %s)\n' "$((i+1))" "${guesses[i]}" "${cows_history[i]}" "${bulls_history[i]}"
+    done
+
+    if [[ $guess == "$secret" ]]; then
+        echo "Вы угадали число!"
+        exit 0
+    fi
+    ((turn += 1))
+done
